@@ -52,6 +52,12 @@ struct PyVeloxContext {
     return execCtx_.get();
   }
 
+  static inline void cleanup() {
+    if (instance_) {
+      instance_.reset();
+    }
+  }
+
  private:
   std::shared_ptr<facebook::velox::memory::MemoryPool> pool_ =
       facebook::velox::memory::getDefaultMemoryPool();
@@ -529,6 +535,10 @@ inline void addVeloxBindings(
   addDataTypeBindings(m, asModuleLocalDefinitions);
   addVectorBindings(m, asModuleLocalDefinitions);
   addExpressionBindings(m, asModuleLocalDefinitions);
+
+  auto atexit = py::module_::import("atexit");
+  atexit.attr("register")(
+      py::cpp_function([]() { PyVeloxContext::cleanup(); }));
 }
 
 } // namespace facebook::velox::py
